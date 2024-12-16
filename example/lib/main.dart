@@ -1,5 +1,8 @@
+import 'package:example/routes_map.dart';
 import 'package:flutter/material.dart';
 import 'package:pip_view/pip_view.dart';
+
+import 'routes.dart';
 
 void main() => runApp(ExampleApp());
 
@@ -7,15 +10,35 @@ class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: HomeScreen(),
+      // home: HomeScreen(),
+      onGenerateRoute: AppRoutes.generateRoutes,
+      routes: RoutesName.appRoutes,
+      initialRoute: HomeScreen.id,
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
+  static const String id = '/HomeScreen';
+
   @override
   Widget build(BuildContext context) {
     return PIPView(
+      routes: AppRoutes.generateRoutes,
+      pipViewWidget: Container(
+        height: 70,
+        width: 70,
+        decoration: BoxDecoration(
+          color: Colors.amber,
+          shape: BoxShape.circle,
+          image: DecorationImage(
+            image: NetworkImage("https://tinypng.com/static/images/boat.png"),
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+      floatingHeight: 70,
+      floatingWidth: 70,
       builder: (context, isFloating) {
         return Scaffold(
           resizeToAvoidBottomInset: !isFloating,
@@ -60,10 +83,8 @@ class BackgroundScreen extends StatelessWidget {
                 color: Theme.of(context).primaryColor,
                 child: Text('Push to navigation'),
                 onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => NavigatedScreen(),
-                    ),
+                  Navigator.of(context).pushNamed(
+                    NavigatedScreen.id,
                   );
                 },
               ),
@@ -76,6 +97,8 @@ class BackgroundScreen extends StatelessWidget {
 }
 
 class NavigatedScreen extends StatelessWidget {
+  static const String id = '/NavigatedScreen';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -8,19 +8,23 @@ class PIPView extends StatefulWidget {
   final double? floatingWidth;
   final double? floatingHeight;
   final bool avoidKeyboard;
+  Route<dynamic>? Function(RouteSettings)? routes;
+  final Widget pipViewWidget;
 
   final Widget Function(
     BuildContext context,
     bool isFloating,
   ) builder;
 
-  const PIPView({
+  PIPView({
     Key? key,
     required this.builder,
+    required this.pipViewWidget,
     this.initialCorner = PIPViewCorner.topRight,
     this.floatingWidth,
     this.floatingHeight,
     this.avoidKeyboard = true,
+    this.routes,
   }) : super(key: key);
 
   @override
@@ -49,11 +53,13 @@ class PIPViewState extends State<PIPView> with TickerProviderStateMixin {
     final isFloating = _bottomWidget != null;
     return RawPIPView(
       avoidKeyboard: widget.avoidKeyboard,
+      pipViewWidget: widget.pipViewWidget,
       bottomWidget: isFloating
           ? Navigator(
               onGenerateInitialRoutes: (navigator, initialRoute) => [
                 MaterialPageRoute(builder: (context) => _bottomWidget!),
               ],
+              onGenerateRoute: widget.routes,
             )
           : null,
       onTapTopWidget: isFloating ? stopFloating : null,
