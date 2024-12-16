@@ -1,22 +1,26 @@
+// widgets/pip_view.dart
 import 'package:flutter/material.dart';
-
+// import '../models/pip_state.dart';
+// import '../navigation/pip_navigation_handler.dart';
 import 'dismiss_keyboard.dart';
+import 'helpers/pip_controllers.dart';
+import 'helpers/pip_navigation_services.dart';
 import 'raw_pip_view.dart';
+
+// models/pip_state.dart
+enum PipViewState { expanded, floating }
 
 class PIPView extends StatefulWidget {
   final PIPViewCorner initialCorner;
   final double? floatingWidth;
   final double? floatingHeight;
   final bool avoidKeyboard;
-  Route<dynamic>? Function(RouteSettings)? routes;
   final Widget pipViewWidget;
+  final Widget Function(BuildContext context, bool isFloating) builder;
+  final GlobalKey<NavigatorState>? parentNavigatorKey;
+  final Route<dynamic> Function(RouteSettings) routes;
 
-  final Widget Function(
-    BuildContext context,
-    bool isFloating,
-  ) builder;
-
-  PIPView({
+  const PIPView({
     Key? key,
     required this.builder,
     required this.pipViewWidget,
@@ -24,54 +28,88 @@ class PIPView extends StatefulWidget {
     this.floatingWidth,
     this.floatingHeight,
     this.avoidKeyboard = true,
-    this.routes,
+    this.parentNavigatorKey,
+    required this.routes,
   }) : super(key: key);
 
   @override
   PIPViewState createState() => PIPViewState();
 
-  static PIPViewState? of(BuildContext context) {
+  static PIPController? of(BuildContext context) {
     return context.findAncestorStateOfType<PIPViewState>();
   }
 }
 
-class PIPViewState extends State<PIPView> with TickerProviderStateMixin {
+class PIPViewState extends State<PIPView>
+    with TickerProviderStateMixin
+    implements PIPController {
+  final PIPNavigationService _navigationService = PIPNavigationService();
   Widget? _bottomWidget;
+  bool _isPIPActive = false;
 
+  @override
   void presentBelow(Widget widget) {
-    dismissKeyboard(context);
-    setState(() => _bottomWidget = widget);
+    setState(() {
+      _bottomWidget = widget;
+      _isPIPActive = true;
+    });
   }
 
+  @override
   void stopFloating() {
-    dismissKeyboard(context);
-    setState(() => _bottomWidget = null);
+    setState(() {
+      _bottomWidget = null;
+      _isPIPActive = false;
+    });
+  }
+
+  @override
+  bool get isPIPActive => _isPIPActive;
+
+  Future<bool> _onWillPop() async {
+    if (_bottomWidget != null) {
+      final popped = await _navigationService.maybePop();
+      if (popped) return false;
+      stopFloating();
+      return false;
+    }
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
     final isFloating = _bottomWidget != null;
-    return RawPIPView(
-      avoidKeyboard: widget.avoidKeyboard,
-      pipViewWidget: widget.pipViewWidget,
-      bottomWidget: isFloating
-          ? Navigator(
-              onGenerateInitialRoutes: (navigator, initialRoute) => [
-                MaterialPageRoute(builder: (context) => _bottomWidget!),
-              ],
-              onGenerateRoute: widget.routes,
-            )
-          : null,
-      onTapTopWidget: isFloating ? stopFloating : null,
-      topWidget: IgnorePointer(
-        ignoring: isFloating,
-        child: Builder(
-          builder: (context) => widget.builder(context, isFloating),
+
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: RawPIPView(
+        avoidKeyboard: widget.avoidKeyboard,
+        pipViewWidget: widget.pipViewWidget,
+        bottomWidget: isFloating
+            ? Navigator(
+                key: _navigationService.navigatorKey,
+                onGenerateRoute: (settings) {
+                  if (settings.name == '/') {
+                    return MaterialPageRoute(
+                      builder: (context) => _bottomWidget!,
+                    );
+                  } else {
+                    return widget.routes(settings);
+                  }
+                },
+              )
+            : null,
+        onTapTopWidget: isFloating ? stopFloating : null,
+        topWidget: Builder(
+          builder: (context) => AbsorbPointer(
+            absorbing: isFloating,
+            child: widget.builder(context, isFloating),
+          ),
         ),
+        floatingHeight: widget.floatingHeight,
+        floatingWidth: widget.floatingWidth,
+        initialCorner: widget.initialCorner,
       ),
-      floatingHeight: widget.floatingHeight,
-      floatingWidth: widget.floatingWidth,
-      initialCorner: widget.initialCorner,
     );
   }
 }

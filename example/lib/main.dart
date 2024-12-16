@@ -10,6 +10,7 @@ class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // navigatorObservers: [AppNavigatorObserver(context)],
       // home: HomeScreen(),
       onGenerateRoute: AppRoutes.generateRoutes,
       routes: RoutesName.appRoutes,
@@ -124,3 +125,25 @@ class NavigatedScreen extends StatelessWidget {
     );
   }
 }
+
+// class AppNavigatorObserver extends NavigatorObserver {
+//   final BuildContext context;
+
+//   AppNavigatorObserver(this.context);
+//   @override
+//   void didPop(Route route, Route? previousRoute) {
+//     super.didPop(route, previousRoute);
+//     Navigator.removeRoute(
+//       context,
+//       route,
+//     );
+//     debugPrint('رجوع من الشاشة: ${route.settings.name}');
+//   }
+
+//   @override
+//   void didPush(Route route, Route? previousRoute) {
+//     super.didPush(route, previousRoute);
+//     // يتم استدعاء الحدث عند الانتقال إلى شاشة جديدة
+//     debugPrint('تم التنقل إلى الشاشة: ${route.settings.name}');
+//   }
+// }
